@@ -1,0 +1,21 @@
+{
+  "name": "EcoVision - المساعد البيئي الذكي",
+  "short_name": "EcoVision",
+  "description": "تطبيق يستخدم الذكاء الاصطناعي للتعرف الفوري على أنواع النفايات وإرشادك لإعادة تدويرها.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1a15",
+  "theme_color": "#0a1a15",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

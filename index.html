@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>EcoVision - المساعد البيئي الذكي</title>
+<meta name="description" content="طبّق الذكاء الاصطناعي في التعرف على المخلفات وتصنيفها للتدوير، مباشرة من متصفحك">
+<meta name="theme-color" content="#0a1a15">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EcoVision">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg-a: #0a1a15;
+        --bg-b: #0e2721;
+        --bg-c: #123328;
+        --primary: #00e676;
+        --primary-dim: #00c86a;
+        --metal: #00e676;
+        --plastic: #29b6f6;
+        --paper: #ffca28;
+        --danger: #ff5252;
+        --glass-bg: rgba(255, 255, 255, 0.06);
+        --glass-bg-strong: rgba(255, 255, 255, 0.09);
+        --glass-border: rgba(255, 255, 255, 0.14);
+        --text: #eef7f2;
+        --text-dim: rgba(238, 247, 242, 0.66);
+        --radius-lg: 26px;
+        --radius-md: 18px;
+        --radius-sm: 12px;
+    }
+
+    [data-contrast="high"] {
+        --bg-a: #000000;
+        --bg-b: #000000;
+        --bg-c: #030303;
+        --primary: #00ff85;
+        --glass-bg: rgba(0, 0, 0, 0.9);
+        --glass-bg-strong: rgba(0, 0, 0, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.85);
+        --text: #ffffff;
+        --text-dim: #f2f2f2;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: 'Tajawal', sans-serif;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    body {
+        background: radial-gradient(circle at 30% 0%, var(--bg-c), var(--bg-b) 45%, var(--bg-a) 100%);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        overflow-x: hidden;
+        transition: background 0.3s ease;
+    }
+
+    [data-contrast="high"] body { background: #000; }
+
+    a, button { color: inherit; }
+
+    :focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+        border-radius: 6px;
+    }
+
+    .app-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        width: 100%;
+        max-width: 440px;
+        padding: 22px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+        position: relative;
+    }
+
+    [data-contrast="high"] .app-card {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: none;
+    }
+
+    /* ---------- Header ---------- */
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .brand-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        background: rgba(0, 230, 118, 0.16);
+        border: 1px solid var(--primary);
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 21px;
+    }
+
+    .brand-title {
+        font-size: 19px;
+        font-weight: 800;
+        line-height: 1.15;
+    }
+
+    .brand-sub {
+        font-size: 11px;
+        color: var(--text-dim);
+        font-weight: 500;
+    }
+
+    .toolbar {
+        display: flex;
+        gap: 6px;
+    }
+
+    .icon-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    .icon-btn[aria-pressed="true"] {
+        background: var(--primary);
+        color: #04160f;
+        border-color: var(--primary);
+    }
+
+    .status-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .status-badge {
+        font-size: 12px;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 500;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #ff9800;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .status-dot.active {
+        background-color: var(--primary);
+        box-shadow: 0 0 10px var(--primary);
+    }
+
+    .impact-chip {
+        font-size: 12px;
+        padding: 6px 12px;
+        background: rgba(0, 230, 118, 0.14);
+        border: 1px solid rgba(0, 230, 118, 0.4);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Camera ---------- */
+    .camera-viewport {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        border: 2px solid var(--glass-border);
+        background: #000;
+        margin-bottom: 18px;
+    }
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .camera-fallback {
+        position: absolute;
+        inset: 0;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-align: center;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.5);
+        font-size: 13px;
+        color: var(--text-dim);
+    }
+
+    .scanner-laser {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        box-shadow: 0 0 15px var(--primary);
+        animation: scan 1.7s infinite ease-in-out;
+        display: none;
+    }
+
+    @keyframes scan {
+        0% { top: 0%; opacity: 0.2; }
+        50% { top: 95%; opacity: 1; }
+        100% { top: 0%; opacity: 0.2; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .scanner-laser { animation: none; top: 50%; opacity: 0.9; }
+    }
+
+    .scan-corners {
+        position: absolute;
+        inset: 14px;
+        pointer-events: none;
+    }
+
+    .scan-corners span {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border-color: rgba(255, 255, 255, 0.55);
+        border-style: solid;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .scan-corners span:nth-child(1) { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 8px 0 0; }
+    .scan-corners span:nth-child(2) { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 8px 0 0 0; }
+    .scan-corners span:nth-child(3) { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 8px; }
+    .scan-corners span:nth-child(4) { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 8px 0; }
+
+    .scan-corners.detected span {
+        border-color: var(--detect-color, var(--primary));
+        box-shadow: 0 0 12px var(--detect-color, var(--primary));
+    }
+
+    /* ---------- CTA ---------- */
+    .btn-main {
+        width: 100%;
+        background: var(--primary);
+        color: #04160f;
+        font-weight: 800;
+        font-size: 17px;
+        border: none;
+        padding: 18px;
+        border-radius: 17px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        transition: transform 0.15s ease;
+        box-shadow: 0 10px 28px rgba(0, 230, 118, 0.32);
+        margin-bottom: 16px;
+    }
+
+    .btn-main:active { transform: scale(0.97); }
+    .btn-main:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ---------- Result panel ---------- */
+    .result-panel {
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-md);
+        padding: 20px;
+        display: none;
+        animation: slideUp 0.4s ease;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .result-panel { animation: none; }
+    }
+
+    .result-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    .result-title {
+        font-size: 19px;
+        font-weight: 800;
+    }
+
+    .speak-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        border: 1px solid var(--glass-border);
+        background: rgba(255, 255, 255, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .confidence-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--text-dim);
+        margin-bottom: 6px;
+        font-weight: 500;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 9px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--primary);
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+
+    .advice-box {
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: var(--text-dim);
+        background: rgba(255, 255, 255, 0.05);
+        padding: 13px;
+        border-radius: var(--radius-sm);
+        border-right: 3px solid var(--primary);
+        margin-bottom: 10px;
+    }
+
+    .impact-note {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .footer-note {
+        margin-top: 16px;
+        text-align: center;
+        font-size: 11px;
+        color: var(--text-dim);
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+</style>
+<script src="edge-impulse-standalone.js"></script>
+<script src="run-impulse.js"></script>
+</head>
+<body>
+
+<div class="app-card">
+    <div class="header">
+        <div class="brand">
+            <div class="brand-icon" aria-hidden="true">🌱</div>
+            <div>
+                <div class="brand-title">EcoVision</div>
+                <div class="brand-sub">تصنيف النفايات بالذكاء الاصطناعي</div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <button class="icon-btn" id="contrastBtn" type="button" aria-pressed="false" aria-label="تفعيل وضع التباين العالي" title="وضع التباين العالي">◐</button>
+            <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" aria-label="إيقاف الصوت والنطق" title="الصوت والنطق">🔊</button>
+        </div>
+    </div>
+
+    <div class="status-row">
+        <div class="status-badge">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">جاري التهيئة...</span>
+        </div>
+        <div class="impact-chip">
+            <span aria-hidden="true">🌍</span>
+            <span>عناصر مصنّفة: <span id="impactCount">0</span></span>
+        </div>
+    </div>
+
+    <div class="camera-viewport">
+        <video id="video" autoplay playsinline muted aria-label="عرض الكاميرا الخلفية للعنصر المراد فحصه"></video>
+        <div class="camera-fallback" id="cameraFallback">
+            تعذّر الوصول إلى الكاميرا. يرجى السماح باستخدام الكاميرا من إعدادات المتصفح ثم إعادة تحميل الصفحة.
+        </div>
+        <div class="scanner-laser" id="laser" aria-hidden="true"></div>
+        <div class="scan-corners" id="scanCorners" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <button class="btn-main" id="scanBtn" type="button">
+        <span id="scanBtnLabel">فحص العنصر الآن</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </button>
+
+    <div class="result-panel" id="resultPanel" role="region" aria-live="polite" aria-label="نتيجة التصنيف">
+        <div class="result-head">
+            <div class="result-title" id="resTitle">---</div>
+            <button class="speak-btn" id="speakBtn" type="button" aria-label="إعادة نطق النتيجة والنصيحة">🔊</button>
+        </div>
+
+        <div class="confidence-label">
+            <span>نسبة الدقة</span>
+            <span id="resPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div class="advice-box" id="resAdvice">
+            وجّه الكاميرا نحو العنصر واضغط زر الفحص للبدء.
+        </div>
+        <div class="impact-note" id="impactNote" style="display:none;">
+            <span aria-hidden="true">♻️</span>
+            <span id="impactNoteText"></span>
+        </div>
+    </div>
+
+    <div class="footer-note">يعمل التحليل بالكامل داخل متصفحك، بلا اتصال إنترنت مطلوب بعد التحميل الأول.</div>
+</div>
+
+<div class="sr-only" role="status" aria-live="assertive" id="liveStatus"></div>
+
+<script>
+(function () {
+    'use strict';
+
+    const video = document.getElementById('video');
+    const cameraFallback = document.getElementById('cameraFallback');
+    const laser = document.getElementById('laser');
+    const scanCorners = document.getElementById('scanCorners');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const resultPanel = document.getElementById('resultPanel');
+    const resTitle = document.getElementById('resTitle');
+    const resPercent = document.getElementById('resPercent');
+    const progressFill = document.getElementById('progressFill');
+    const resAdvice = document.getElementById('resAdvice');
+    const impactNote = document.getElementById('impactNote');
+    const impactNoteText = document.getElementById('impactNoteText');
+    const impactCountEl = document.getElementById('impactCount');
+    const scanBtn = document.getElementById('scanBtn');
+    const scanBtnLabel = document.getElementById('scanBtnLabel');
+    const speakBtn = document.getElementById('speakBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const contrastBtn = document.getElementById('contrastBtn');
+    const liveStatus = document.getElementById('liveStatus');
+
+    let classifier = null;
+    let impactCount = 0;
+    let soundEnabled = true;
+    let lastSpeech = '';
+    let audioCtx = null;
+
+    const ecoDatabase = {
+        'METAL': {
+            title: 'معدن / علب ألومنيوم 🥫',
+            advice: 'المعادن قابلة لإعادة التدوير بنسبة كاملة. أفرغ بقايا السوائل واضغط العلبة لتوفير المساحة في سلة المعادن.',
+            impact: 'تدوير هذه العلبة يوفر نحو 95% من الطاقة اللازمة لصناعة علبة جديدة.',
+            color: 'var(--metal)'
+        },
+        'PLASTIC': {
+            title: 'بلاستيك 🥤',
+            advice: 'أفرغ العبوة تماماً واغسلها بالماء. نزع الأغطية والملصقات يسرّع عملية التدوير.',
+            impact: 'كل عبوة بلاستيكية تُعاد تدويرها تقلل من المخلفات التي قد تستغرق مئات السنين لتتحلل.',
+            color: 'var(--plastic)'
+        },
+        'PAPER': {
+            title: 'ورق / كرتون 📦',
+            advice: 'حافظ على جفاف الورق. لا يمكن تدوير الورق الملوث بالطعام أو الزيوت. اطوِ الكرتون لتسهيل التخزين.',
+            impact: 'تدوير الورق يحافظ على الأشجار ويقلل استهلاك المياه في التصنيع.',
+            color: 'var(--paper)'
+        }
+    };
+
+    let cachedVoices = [];
+    let speechUnlocked = false;
+
+    function refreshVoices() {
+        if ('speechSynthesis' in window) {
+            cachedVoices = window.speechSynthesis.getVoices();
+        }
+    }
+
+    function pickArabicVoice() {
+        // Prefer an exact/near Arabic voice; fall back to any voice whose lang starts with "ar".
+        return cachedVoices.find(v => /^ar(-|_|$)/i.test(v.lang)) || null;
+    }
+
+    // Voice lists load asynchronously in most browsers (esp. Chrome) — this can be
+    // the reason speak() produces no sound on the very first attempt.
+    if ('speechSynthesis' in window) {
+        refreshVoices();
+        window.speechSynthesis.onvoiceschanged = refreshVoices;
+    }
+
+    // Many mobile browsers only allow speechSynthesis.speak() if it happens inside
+    // (or very close to) a direct user tap. Our real speech fires after the async
+    // classification finishes, which can be too late. This "unlocks" it early.
+    function unlockSpeech() {
+        if (speechUnlocked || !('speechSynthesis' in window)) return;
+        try {
+            const warm = new SpeechSynthesisUtterance(' ');
+            warm.volume = 0;
+            window.speechSynthesis.speak(warm);
+            speechUnlocked = true;
+        } catch (e) { /* ignore */ }
+    }
+
+    function speak(text) {
+        if (!soundEnabled) return;
+        if (!('speechSynthesis' in window)) {
+            announce('هذا المتصفح لا يدعم النطق الصوتي، النتيجة معروضة نصياً فقط.');
+            return;
+        }
+        try {
+            window.speechSynthesis.cancel();
+            const utter = new SpeechSynthesisUtterance(text);
+            const arVoice = pickArabicVoice();
+            if (arVoice) {
+                utter.voice = arVoice;
+                utter.lang = arVoice.lang;
+            } else {
+                utter.lang = 'ar-SA';
+            }
+            utter.rate = 0.98;
+            window.speechSynthesis.speak(utter);
+            lastSpeech = text;
+        } catch (e) { /* ignore */ }
+    }
+
+    function announce(text) {
+        liveStatus.textContent = text;
+    }
+
+    function playCyberBeep() {
+        if (!soundEnabled) return;
+        try {
+            audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(420, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.28);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.12, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        } catch (e) { /* ignore, non-critical */ }
+    }
+
+    async function initCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } },
+                audio: false
+            });
+            video.srcObject = stream;
+            cameraFallback.style.display = 'none';
+        } catch (err) {
+            cameraFallback.style.display = 'flex';
+            announce('تعذّر الوصول إلى الكاميرا');
+        }
+    }
+
+    (async () => {
+        try {
+            classifier = new EdgeImpulseClassifier();
+            await classifier.init();
+            statusDot.classList.add('active');
+            statusText.innerText = 'جاهز للاستخدام';
+            announce('النموذج جاهز للاستخدام');
+        } catch (err) {
+            statusText.innerText = 'فشل التحميل';
+            announce('فشل تحميل نموذج الذكاء الاصطناعي');
+            console.error(err);
+        }
+    })();
+
+    initCamera();
+
+    async function runClassification() {
+        if (!classifier) {
+            announce('النموذج ما زال قيد التحميل، يرجى الانتظار');
+            return;
+        }
+
+        scanBtn.disabled = true;
+        scanBtnLabel.textContent = 'جاري التحليل...';
+        laser.style.display = 'block';
+        scanCorners.classList.remove('detected');
+        if (navigator.vibrate) navigator.vibrate(50);
+        playCyberBeep();
+        announce('جاري تحليل العنصر');
+
+        setTimeout(async () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 160;
+                canvas.height = 160;
+                const ctx = canvas.getContext('2d');
+
+                // The camera stream is rarely a perfect square (usually 4:3 or 16:9),
+                // but the preview box on screen shows a center-cropped square
+                // (object-fit: cover). Squishing the full non-square frame into a
+                // 160x160 square (the old behavior) distorts the image and can be a
+                // major cause of misclassification, since it no longer matches what
+                // the trained model expects. Center-crop to a square first, exactly
+                // like the on-screen preview, then resize.
+                const vw = video.videoWidth || 640;
+                const vh = video.videoHeight || 640;
+                const cropSize = Math.min(vw, vh);
+                const sx = (vw - cropSize) / 2;
+                const sy = (vh - cropSize) / 2;
+                ctx.drawImage(video, sx, sy, cropSize, cropSize, 0, 0, 160, 160);
+
+                const imgData = ctx.getImageData(0, 0, 160, 160);
+                const features = [];
+                for (let i = 0; i < imgData.data.length; i += 4) {
+                    const r = imgData.data[i];
+                    const g = imgData.data[i + 1];
+                    const b = imgData.data[i + 2];
+                    features.push((r << 16) | (g << 8) | b);
+                }
+
+                const res = classifier.classify(features);
+                laser.style.display = 'none';
+
+                const highest = res.results.reduce((prev, curr) => (prev.value > curr.value) ? prev : curr);
+                const label = highest.label.toUpperCase();
+                const score = (highest.value * 100).toFixed(1);
+
+                const data = ecoDatabase[label] || {
+                    title: highest.label,
+                    advice: 'تم التعرف على العنصر. يرجى مراجعة إرشادات الفرز المحلية لديك.',
+                    impact: '',
+                    color: 'var(--primary)'
+                };
+
+                resultPanel.style.display = 'block';
+                resTitle.innerText = data.title;
+                resPercent.innerText = score + '%';
+                progressFill.style.width = score + '%';
+                progressFill.style.background = data.color;
+                resAdvice.innerText = data.advice;
+
+                scanCorners.style.setProperty('--detect-color', data.color);
+                scanCorners.classList.add('detected');
+
+                if (data.impact) {
+                    impactNoteText.textContent = data.impact;
+                    impactNote.style.display = 'flex';
+                } else {
+                    impactNote.style.display = 'none';
+                }
+
+                impactCount += 1;
+                impactCountEl.textContent = impactCount;
+
+                const spoken = 'تم التعرف على ' + data.title.replace(/[\u{1F300}-\u{1FAFF}]/gu, '').trim() + '. ' + data.advice;
+                speak(spoken);
+                announce(spoken);
+            } catch (err) {
+                console.error(err);
+                laser.style.display = 'none';
+                announce('حدث خطأ أثناء التحليل، يرجى المحاولة مجدداً');
+            } finally {
+                scanBtn.disabled = false;
+                scanBtnLabel.textContent = 'فحص العنصر الآن';
+            }
+        }, 550);
+    }
+
+    scanBtn.addEventListener('click', function () {
+        unlockSpeech();
+        runClassification();
+    });
+
+    speakBtn.addEventListener('click', function () {
+        const title = resTitle.innerText.replace(/[\u{1F300}-\u{1FAFF}]/gu, '').trim();
+        const advice = resAdvice.innerText;
+        if (title && title !== '---') {
+            speak('تم التعرف على ' + title + '. ' + advice);
+        }
+    });
+
+    soundBtn.addEventListener('click', function () {
+        soundEnabled = !soundEnabled;
+        soundBtn.setAttribute('aria-pressed', String(soundEnabled));
+        soundBtn.textContent = soundEnabled ? '🔊' : '🔇';
+        soundBtn.setAttribute('aria-label', soundEnabled ? 'إيقاف الصوت والنطق' : 'تفعيل الصوت والنطق');
+        if (!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    });
+
+    contrastBtn.addEventListener('click', function () {
+        const isHigh = document.documentElement.getAttribute('data-contrast') === 'high';
+        document.documentElement.setAttribute('data-contrast', isHigh ? 'normal' : 'high');
+        contrastBtn.setAttribute('aria-pressed', String(!isHigh));
+        announce(isHigh ? 'تم إيقاف وضع التباين العالي' : 'تم تفعيل وضع التباين العالي');
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('sw.js').catch(function () { /* offline support optional */ });
+        });
+    }
+})();
+</script>
+
+</body>
+</html>
